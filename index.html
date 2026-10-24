@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0E2A47">
+<title>Cielo DIA</title>
+<style>
+:root{--navy:#0E2A47;--cel:#38BDF8;--vio:#7C3AED;--amb:#F59E0B;--txt:#EAF4FF;--mut:#9FB3C8;--panel:rgba(9,22,40,.92);--line:rgba(56,189,248,.25)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#020611;color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#cam{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+#sky{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:block}
+button{font:inherit;color:inherit;cursor:pointer}
+#intro{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;padding:24px;
+ background:radial-gradient(120% 80% at 50% 110%,#1d1350 0%,#0E2A47 40%,#020611 100%)}
+#intro .box{max-width:440px;text-align:center}
+#intro h1{font-size:44px;margin:0 0 6px;letter-spacing:.5px;background:linear-gradient(90deg,var(--cel),var(--vio));-webkit-background-clip:text;background-clip:text;color:transparent}
+#intro .sub{color:var(--amb);font-weight:700;margin:0 0 18px;letter-spacing:2px;font-size:13px;text-transform:uppercase}
+#intro p{line-height:1.5;color:#d4e3f3;margin:0 0 14px}
+#intro .chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 22px}
+#intro .chips span{border:1px solid var(--line);border-radius:99px;padding:4px 10px;font-size:13px;color:#cfe6ff;background:rgba(56,189,248,.06)}
+#go{border:0;border-radius:16px;padding:16px 28px;font-size:19px;font-weight:800;background:linear-gradient(90deg,var(--cel),var(--vio));color:#fff;box-shadow:0 8px 30px rgba(124,58,237,.45)}
+#intro small{display:block;margin-top:16px;color:var(--mut);line-height:1.4}
+#intro .foot{margin-top:22px;font-size:12px;color:#7d93ad}
+.hud{position:fixed;left:0;right:0;z-index:10;pointer-events:none;padding:10px 14px;display:flex;justify-content:space-between;gap:10px;font-size:13px;text-shadow:0 1px 3px #000}
+#top{top:0;padding-top:max(10px,env(safe-area-inset-top))}
+#top div{background:rgba(2,6,17,.55);border-radius:10px;padding:6px 10px;font-size:12px;white-space:nowrap}
+#bar{position:fixed;left:0;right:0;bottom:0;z-index:12;display:flex;justify-content:center;gap:8px;padding:10px 10px max(12px,env(safe-area-inset-bottom))}
+#bar button{border:1px solid var(--line);background:rgba(9,22,40,.78);border-radius:14px;padding:10px 12px;font-size:14px;font-weight:600;min-width:64px;backdrop-filter:blur(6px)}
+#bar button.on{border-color:var(--amb);color:var(--amb)}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:20;max-height:72vh;overflow:auto;background:var(--panel);border-top:1px solid var(--line);border-radius:18px 18px 0 0;padding:16px 16px max(20px,env(safe-area-inset-bottom));display:none;backdrop-filter:blur(10px)}
+.sheet.show{display:block}
+.sheet h2{margin:0 0 10px;font-size:18px;display:flex;justify-content:space-between;align-items:center}
+.x{border:0;background:rgba(255,255,255,.08);border-radius:10px;width:36px;height:36px;font-size:18px}
+.grp{color:var(--amb);font-size:12px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;margin:14px 0 6px}
+.item{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;border:0;border-bottom:1px solid rgba(255,255,255,.06);background:none;padding:10px 4px;font-size:15px}
+.item small{color:var(--mut);font-size:12px;white-space:nowrap;margin-left:8px}
+.item small.up{color:#7ee2a8}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.row label{flex:1 1 140px;font-size:14px;color:#cfe0f2}
+.row input[type=number]{width:100%;background:#071426;border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:9px;font-size:15px}
+.row input[type=range]{flex:1 1 180px;accent-color:var(--cel)}
+.btn{border:1px solid var(--line);background:rgba(56,189,248,.1);border-radius:12px;padding:9px 12px;font-weight:600;font-size:14px}
+.btn.pri{background:linear-gradient(90deg,var(--cel),var(--vio));border:0;color:#fff}
+.chk{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:15px}
+.chk input{width:20px;height:20px;accent-color:var(--cel)}
+.hint{color:var(--mut);font-size:13px;line-height:1.4;margin:4px 0 8px}
+#card h3{margin:0;font-size:22px}
+#card .tag{display:inline-block;margin:6px 0 10px;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#0b1a2e;background:var(--cel);border-radius:99px;padding:3px 10px}
+#card .tag.bh{background:var(--amb)}
+#card p{margin:6px 0;line-height:1.5;font-size:15px}
+#card .pos{color:#bfe6ff}
+#card .dist{color:#ffd99a}
+#toast{position:fixed;left:50%;top:22%;transform:translateX(-50%);z-index:25;background:rgba(9,22,40,.92);border:1px solid var(--amb);color:#fff;padding:10px 16px;border-radius:14px;font-weight:600;max-width:88vw;text-align:center;display:none;font-size:15px}
+#err{position:fixed;left:10px;right:10px;top:max(60px,env(safe-area-inset-top));z-index:40;background:#5b1020;border:1px solid #ff6b81;color:#fff;padding:10px 12px;border-radius:12px;font-size:13px;display:none}
+</style>
+</head>
+<body>
+<video id="cam" playsinline muted autoplay></video>
+<canvas id="sky"></canvas>
+
+<div id="intro"><div class="box">
+ <h1>Cielo DIA</h1>
+ <div class="sub">Realidad aumentada del cielo</div>
+ <p>Apuntá el celular al cielo y descubrí dónde están los planetas, la Luna, la Vía Láctea, Andrómeda y hasta los agujeros negros. Funciona de día, de noche y con nubes: el cielo se calcula con tu ubicación y la hora.</p>
+ <div class="chips"><span>🪐 Planetas</span><span>🌙 Luna</span><span>🌌 Vía Láctea</span><span>🕳️ Agujeros negros</span><span>✨ Andrómeda</span><span>✝️ Cruz del Sur</span></div>
+ <button id="go">🔭 Mirar el cielo</button>
+ <small>Te va a pedir permiso de cámara, ubicación y sensores de movimiento. No necesita internet.</small>
+ <div class="foot">DIA · Didáctica con IA — Aprendé jugando</div>
+</div></div>
+
+<div id="top" class="hud"><div id="clock">—</div><div id="look">—</div></div>
+
+<div id="bar">
+ <button id="bSearch">🔍 Buscar</button>
+ <button id="bTime">⏱ Tiempo</button>
+ <button id="bCam" class="on">📷</button>
+ <button id="bSet">⚙️</button>
+</div>
+
+<div id="pSearch" class="sheet"><h2>¿Qué querés encontrar?<button class="x" data-close>✕</button></h2>
+ <div class="hint">Elegí algo y seguí la flecha amarilla hasta tenerlo en la mira.</div>
+ <div id="list"></div>
+</div>
+
+<div id="pTime" class="sheet"><h2>Viajar en el tiempo<button class="x" data-close>✕</button></h2>
+ <div class="hint">Mové el reloj para ver cómo gira el cielo. Ideal para saber cuándo sale un planeta.</div>
+ <div class="row">
+  <button class="btn" data-t="-24">−1 día</button><button class="btn" data-t="-1">−1 h</button>
+  <button class="btn pri" data-t="0">Ahora</button>
+  <button class="btn" data-t="1">+1 h</button><button class="btn" data-t="24">+1 día</button>
+ </div>
+ <div class="row"><button class="btn" id="bAnim">▶ Animar el cielo</button><span id="tInfo" class="hint"></span></div>
+</div>
+
+<div id="pSet" class="sheet"><h2>Ajustes<button class="x" data-close>✕</button></h2>
+ <div class="grp">Ubicación</div>
+ <div class="row"><label>Latitud<input type="number" id="iLat" step="0.001"></label><label>Longitud<input type="number" id="iLon" step="0.001"></label></div>
+ <div class="row"><button class="btn pri" id="bLoc">Guardar</button><button class="btn" id="bGps">📍 Usar GPS</button><span id="locSrc" class="hint"></span></div>
+ <div class="grp">Brújula</div>
+ <div class="hint">Si los objetos aparecen corridos, girá este control. Lo más fácil: buscá la Luna o el Sol, tocalo y usá «Calibrar con este».</div>
+ <div class="row"><input type="range" id="iNorth" min="-180" max="180" step="1"><span id="vNorth" style="min-width:52px">0°</span><button class="btn" id="bNorth0">0</button></div>
+ <div class="grp">Zoom (campo de visión)</div>
+ <div class="row"><input type="range" id="iFov" min="20" max="110" step="1"><span id="vFov" style="min-width:52px">62°</span></div>
+ <div class="hint">También podés hacer pellizco con dos dedos.</div>
+ <div class="grp">Mostrar</div>
+ <label class="chk"><input type="checkbox" id="cMw"> Vía Láctea</label>
+ <label class="chk"><input type="checkbox" id="cLines"> Figuras de constelaciones</label>
+ <label class="chk"><input type="checkbox" id="cNames"> Nombres de estrellas</label>
+ <label class="chk"><input type="checkbox" id="cDrag"> Mover el cielo con el dedo (sin sensores)</label>
+</div>
+
+<div id="card" class="sheet"><h2><span id="cTitle"></span><button class="x" data-close>✕</button></h2>
+ <span id="cTag" class="tag"></span>
+ <p id="cPos" class="pos"></p>
+ <p id="cDist" class="dist"></p>
+ <p id="cText"></p>
+ <div class="row"><button class="btn" id="bSay">🔊 Escuchar</button><button class="btn" id="bGuide">🎯 Guiarme</button><button class="btn" id="bCal">🧭 Calibrar con este</button></div>
+</div>
+
+<div id="toast"></div>
+<div id="err"></div>
+
+<script>
+'use strict';
+const DEG=Math.PI/180,RAD=180/Math.PI;
+const $=s=>document.querySelector(s);
+function showErr(m){const e=$('#err');e.textContent='Error: '+m;e.style.display='block';clearTimeout(showErr.t);showErr.t=setTimeout(()=>e.style.display='none',9000);}
+window.addEventListener('error',e=>showErr(e.message));
+window.addEventListener('unhandledrejection',e=>showErr((e.reason&&e.reason.message)||String(e.reason)));
+
+/* ---------- Estado ---------- */
+const st={lat:-26.308,lon:-59.372,locSrc:'El Colorado, Formosa (predeterminado)',tOff:0,fov:62,north:0,cam:true,lines:true,mw:true,names:true,
+ drag:false,sensor:false,absolute:false,target:null,sel:null,vAz:0,vAlt:30,anim:false,now:new Date()};
+try{const s=JSON.parse(localStorage.getItem('cieloDIA')||'{}');['lat','lon','locSrc','fov','north','lines','mw','names'].forEach(k=>{if(s[k]!==undefined)st[k]=s[k];});}catch(e){}
+function save(){try{localStorage.setItem('cieloDIA',JSON.stringify({lat:st.lat,lon:st.lon,locSrc:st.locSrc,fov:st.fov,north:st.north,lines:st.lines,mw:st.mw,names:st.names}));}catch(e){}}
+
+/* ---------- Matemática ---------- */
+const norm=v=>{const l=Math.hypot(v[0],v[1],v[2])||1;return [v[0]/l,v[1]/l,v[2]/l];};
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const EPS=23.4392911*DEG;
+function ecl2eq(v){const c=Math.cos(EPS),s=Math.sin(EPS);return [v[0],v[1]*c-v[2]*s,v[1]*s+v[2]*c];}
+function eq2ecl(v){const c=Math.cos(EPS),s=Math.sin(EPS);return [v[0],v[1]*c+v[2]*s,-v[1]*s+v[2]*c];}
+function precess(v,T){const e=eq2ecl(v),p=1.3969713*T*DEG,c=Math.cos(p),s=Math.sin(p);return ecl2eq([e[0]*c-e[1]*s,e[0]*s+e[1]*c,e[2]]);}
+function rd2v(raH,dec){const a=raH*15*DEG,d=dec*DEG;return [Math.cos(d)*Math.cos(a),Math.cos(d)*Math.sin(a),Math.sin(d)];}
+/* ecuatorial -> Este/Norte/Arriba */
+function enu(v,LST,lat){const cL=Math.cos(LST),sL=Math.sin(LST),cp=Math.cos(lat),sp=Math.sin(lat);
+ const ch=v[0]*cL+v[1]*sL,sh=v[0]*sL-v[1]*cL;return [-sh,v[2]*cp-ch*sp,v[2]*sp+ch*cp];}
+
+/* Elementos orbitales aproximados (JPL, válidos 1800-2050): a,e,I,L,peri,nodo + tasas por siglo */
+const EL={
+ mercurio:[0.38709927,0.20563593,7.00497902,252.25032350,77.45779628,48.33076593,0.00000037,0.00001906,-0.00594749,149472.67411175,0.16047689,-0.12534081],
+ venus:[0.72333566,0.00677672,3.39467605,181.97909950,131.60246718,76.67984255,0.00000390,-0.00004107,-0.00078890,58517.81538729,0.00268329,-0.27769418],
+ tierra:[1.00000261,0.01671123,-0.00001531,100.46457166,102.93768193,0,0.00000562,-0.00004392,-0.01294668,35999.37244981,0.32327364,0],
+ marte:[1.52371034,0.09339410,1.84969142,-4.55343205,-23.94362959,49.55953891,0.00001847,0.00007882,-0.00813131,19140.30268499,0.44441088,-0.29257343],
+ jupiter:[5.20288700,0.04838624,1.30439695,34.39644051,14.72847983,100.47390909,-0.00011607,-0.00013253,-0.00183714,3034.74612775,0.21252668,0.20469106],
+ saturno:[9.53667594,0.05386179,2.48599187,49.95424423,92.59887831,113.66242448,-0.00125060,-0.00050991,0.00193609,1222.49362201,-0.41897216,-0.28867794],
+ urano:[19.18916464,0.04725744,0.77263783,313.23810451,170.95427630,74.01692503,-0.00196176,-0.00004397,-0.00242939,428.48202785,0.40805281,0.04240589],
+ neptuno:[30.06992276,0.00859048,1.77004347,-55.12002969,44.96476227,131.78422574,0.00026291,0.00005105,0.00035372,218.45945325,-0.32241464,-0.00508664]
+};
+function helio(k,T){const p=EL[k];const a=p[0]+p[6]*T,e=p[1]+p[7]*T,I=(p[2]+p[8]*T)*DEG,L=p[3]+p[9]*T,w=p[4]+p[10]*T,O=p[5]+p[11]*T;
+ let M=((((L-w)%360)+540)%360-180)*DEG,E=M+e*Math.sin(M);
+ for(let i=0;i<10;i++)E-=(E-e*Math.sin(E)-M)/(1-e*Math.cos(E));
+ const xp=a*(Math.cos(E)-e),yp=a*Math.sqrt(1-e*e)*Math.sin(E);
+ const om=(w-O)*DEG,Om=O*DEG,co=Math.cos(om),so=Math.sin(om),cO=Math.cos(Om),sO=Math.sin(Om),cI=Math.cos(I),sI=Math.sin(I);
+ return [(co*cO-so*sO*cI)*xp+(-so*cO-co*sO*cI)*yp,(co*sO+so*cO*cI)*xp+(-so*sO+co*cO*cI)*yp,(so*sI)*xp+(co*sI)*yp];}
+function moonEcl(d){const r=x=>x*DEG;const L=218.316+13.176396*d,M=r(134.963+13.064993*d),F=r(93.272+13.229350*d),D=r(297.850+12.190749*d),Ms=r(357.529+0.98560028*d);
+ const lam=(L+6.289*Math.sin(M)+1.274*Math.sin(2*D-M)+0.658*Math.sin(2*D)+0.214*Math.sin(2*M)-0.186*Math.sin(Ms)-0.114*Math.sin(2*F))*DEG;
+ const bet=(5.128*Math.sin(F)+0.281*Math.sin(M+F)+0.278*Math.sin(M-F)+0.173*Math.sin(2*D-F))*DEG;
+ const dist=385001-20905*Math.cos(M)-3699*Math.cos(2*D-M)-2956*Math.cos(2*D);
+ return {v:[Math.cos(bet)*Math.cos(lam),Math.cos(bet)*Math.sin(lam),Math.sin(bet)],dist};}
+const aG=192.85948*DEG,dG=27.12825*DEG,lN=122.93192*DEG;
+function gal2eq(l,b){l*=DEG;b*=DEG;const d=Math.asin(Math.sin(b)*Math.sin(dG)+Math.cos(b)*Math.cos(dG)*Math.cos(lN-l));
+ const a=aG+Math.atan2(Math.cos(b)*Math.sin(lN-l),Math.sin(b)*Math.cos(dG)-Math.cos(b)*Math.sin(dG)*Math.cos(lN-l));
+ return [Math.cos(d)*Math.cos(a),Math.cos(d)*Math.sin(a),Math.sin(d)];}
+
+/* ---------- Catálogo ---------- */
+const OBJ=[],BYID={};
+function add(o){OBJ.push(o);BYID[o.id]=o;return o;}
+add({id:'sol',name:'Sol',kind:'sol',text:'¡Nunca lo mires directo, ni con anteojos de sol ni con binoculares! Es una estrella mediana: adentro entrarían 1,3 millones de Tierras.'});
+add({id:'luna',name:'Luna',kind:'luna',text:'Siempre nos muestra la misma cara. Y se aleja de la Tierra unos 3,8 centímetros por año.'});
+[['mercurio','Mercurio','#cdbfae',4,'El planeta más chico y el más cercano al Sol. Su año dura solo 88 días. Como no tiene atmósfera, pasa de −180 °C de noche a 430 °C de día.'],
+ ['venus','Venus','#fff4c8',7,'El planeta más caliente (465 °C) por su atmósfera de dióxido de carbono. Gira al revés que casi todos. Es el «lucero» del amanecer o del atardecer.'],
+ ['marte','Marte','#ff7a4d',5,'El planeta rojo: su suelo está oxidado, como un clavo viejo. Ahí está el Monte Olimpo, el volcán más alto del sistema solar.'],
+ ['jupiter','Júpiter','#f3d2a2',7,'El gigante: adentro entrarían unas 1.300 Tierras. Su Gran Mancha Roja es una tormenta más grande que nuestro planeta. Con binoculares le ves cuatro lunas.'],
+ ['saturno','Saturno','#f0dc9a',6,'El señor de los anillos, hechos de hielo y roca. Es tan liviano que flotaría en una pileta gigante. Tiene más de 270 lunas conocidas. En 2025 sus anillos quedaron de canto y casi desaparecieron: ahora se van abriendo de a poco.'],
+ ['urano','Urano','#9fe6ee',4,'Gira acostado, como una pelota rodando. Está en el límite de lo que se ve a simple vista: hace falta cielo muy oscuro.'],
+ ['neptuno','Neptuno','#7c97ff',4,'El planeta más lejano. Tiene los vientos más fuertes del sistema solar, de unos 2.000 km/h. No se ve sin telescopio.']
+].forEach(p=>add({id:p[0],name:p[1],kind:'planeta',color:p[2],r:p[3],text:p[4]}));
+add({id:'vialactea',name:'Vía Láctea',kind:'vialactea',dist:'Estás adentro de ella',text:'Nuestra galaxia, vista desde adentro: una franja de cientos de miles de millones de estrellas que mide unos 100.000 años luz de punta a punta. Lejos de las luces, con cielo oscuro, se ve como un río de leche. Su parte más brillante, hacia Escorpio y Sagitario, es el centro galáctico.'});
+[['sgra','Sagitario A*','agujero',17.7611,-29.0078,'26.000 años luz',0,'El agujero negro supermasivo del centro de nuestra galaxia: pesa como 4 millones de soles. En 2022 el Event Horizon Telescope mostró su imagen. No lo vas a ver con los ojos porque hay polvo y gas en el medio, pero estás apuntando justo hacia él.'],
+ ['m87','M87*','agujero',12.5137,12.391,'55 millones de años luz',0,'El primer agujero negro fotografiado de la historia, en 2019. Pesa unos 6.500 millones de soles y vive en el centro de la galaxia M87, en la constelación de Virgo.'],
+ ['cygx1','Cygnus X-1','agujero',19.9728,35.2017,'unos 7.200 años luz',0,'Uno de los primeros agujeros negros identificados, en los años 70. Pesa unos 21 soles y le va arrancando gas a una estrella supergigante azul compañera.'],
+ ['gaiabh1','Gaia BH1','agujero',17.4781,-0.5811,'unos 1.560 años luz',0,'El agujero negro más cercano a la Tierra que se conoce. Lo descubrió el satélite Gaia en 2022: pesa unos 10 soles y tiene una estrella parecida al Sol girando a su alrededor.'],
+ ['m31','Andrómeda (M31)','galaxia',0.7123,41.269,'2,5 millones de años luz',3.2,'La galaxia grande más cercana y lo más lejano que podés ver a simple vista. La luz que te llega salió cuando todavía no existía nuestra especie. Se acerca a unos 110 km/s: tal vez dentro de miles de millones de años choque con la Vía Láctea.'],
+ ['lmc','Nube Grande de Magallanes','nube',5.3923,-69.756,'160.000 años luz',8,'Una galaxia satélite de la Vía Láctea. Desde el hemisferio sur, con cielo oscuro, se ve como una nubecita que no se mueve con el viento.'],
+ ['smc','Nube Chica de Magallanes','nube',0.8775,-72.828,'200.000 años luz',4,'La hermana menor de la Nube Grande: otra galaxia que gira alrededor de la nuestra. Solo se ve bien desde el hemisferio sur.'],
+ ['m42','Nebulosa de Orión','nebulosa',5.5881,-5.391,'1.344 años luz',1.3,'Una guardería de estrellas: una nube de gas donde están naciendo soles nuevos. Se ve a simple vista como una manchita junto a las Tres Marías.'],
+ ['etacar','Nebulosa de Carina','nebulosa',10.7514,-59.684,'7.500 años luz',2,'Ahí vive Eta Carinae, una estrella monstruosa de más de 100 soles que en 1843 tuvo una erupción gigante y llegó a ser de las más brillantes del cielo.'],
+ ['ocen','Omega Centauri','cumulo',13.4467,-47.479,'17.000 años luz',0.9,'El cúmulo globular más grande de la Vía Láctea: unos 10 millones de estrellas apretadas en una bola. En 2024 encontraron señales de un agujero negro de masa intermedia en su centro.'],
+ ['m45','Pléyades','cumulo',3.79,24.117,'444 años luz',1.8,'Un grupo de estrellas jóvenes y azules. A simple vista se distinguen seis o siete: por eso les dicen «las siete cabrillas».']
+].forEach(d=>add({id:d[0],name:d[1],kind:d[2],ra:d[3],dec:d[4],dist:d[5],size:d[6],text:d[7]}));
+const STARS=[
+['sirio','Sirio',6.7525,-16.716,-1.46,'Can Mayor','8,6 años luz','#d6e6ff','La estrella más brillante del cielo nocturno. En realidad son dos: Sirio A y una enana blanca diminuta, Sirio B.'],
+['canopus','Canopus',6.3992,-52.696,-0.74,'Carina','310 años luz','#fff8e8','La segunda estrella más brillante. Muchas naves espaciales la usan como faro para orientarse.'],
+['acen','Alfa Centauri',14.66,-60.834,-0.27,'Centauro','4,4 años luz','#fff1c9','El sistema estelar más cercano al Sol. Su compañera Próxima Centauri es la estrella más cercana de todas y tiene planetas.'],
+['arturo','Arturo',14.261,19.182,-0.05,'Boyero','37 años luz','#ffc98a','Una gigante naranja, unas 25 veces más grande que el Sol.'],
+['vega','Vega',18.6156,38.784,0.03,'Lira','25 años luz','#dfeaff','Hace 12.000 años era la estrella polar del norte, y lo volverá a ser dentro de unos 13.000 años.'],
+['capella','Capella',5.2782,45.998,0.08,'Cochero','43 años luz','#fff0c0','En realidad son cuatro estrellas: dos gigantes amarillas y dos enanas rojas.'],
+['rigel','Rigel',5.2423,-8.202,0.13,'Orión','860 años luz','#cfe0ff','Supergigante azul: brilla como más de 100.000 soles juntos.'],
+['procion','Proción',7.655,5.225,0.34,'Can Menor','11,5 años luz','#fff8ea','Una de las estrellas más cercanas que se ven a simple vista.'],
+['achernar','Achernar',1.6286,-57.237,0.46,'Erídano','139 años luz','#d8e6ff','La estrella más achatada que se conoce: gira tan rápido que se ensancha en el ecuador.'],
+['betelgeuse','Betelgeuse',5.9195,7.407,0.5,'Orión','unos 550 años luz','#ffab73','Supergigante roja: puesta en lugar del Sol llegaría más allá de Marte. Algún día va a explotar como supernova.'],
+['hadar','Hadar',14.0637,-60.373,0.61,'Centauro','390 años luz','#d8e6ff','Junto con Alfa Centauri forma «los punteros», que señalan hacia la Cruz del Sur.'],
+['altair','Altair',19.8464,8.868,0.76,'Águila','16,7 años luz','#f2f4ff','Gira sobre sí misma en menos de 9 horas; el Sol tarda casi un mes.'],
+['acrux','Acrux',12.4433,-63.099,0.77,'Cruz del Sur','320 años luz','#d8e6ff','El pie de la Cruz del Sur. Si prolongás el palo largo unas cuatro veces y media, llegás al polo sur celeste.'],
+['aldebaran','Aldebarán',4.5987,16.509,0.85,'Tauro','65 años luz','#ffb37a','El ojo rojo del Toro.'],
+['antares','Antares',16.4901,-26.432,0.96,'Escorpio','550 años luz','#ff8d5c','El corazón rojo del Escorpión. Su nombre significa «rival de Marte».'],
+['spica','Espiga',13.4199,-11.161,0.97,'Virgo','250 años luz','#d6e4ff','Dos estrellas azules tan juntas que se deforman como huevos.'],
+['polux','Pólux',7.7553,28.026,1.14,'Géminis','34 años luz','#ffd9a0','Tiene un planeta gigante girando a su alrededor.'],
+['fomalhaut','Fomalhaut',22.9608,-29.622,1.16,'Pez Austral','25 años luz','#f2f4ff','Está rodeada por un enorme anillo de polvo, como un sistema solar en formación.'],
+['deneb','Deneb',20.6905,45.28,1.25,'Cisne','unos 2.600 años luz','#f2f4ff','Una de las estrellas más luminosas que se ven a simple vista: brilla como decenas de miles de soles.'],
+['mimosa','Mimosa',12.7953,-59.689,1.25,'Cruz del Sur','280 años luz','#d8e6ff','Uno de los brazos de la Cruz del Sur.'],
+['regulo','Régulo',10.1395,11.967,1.35,'Leo','79 años luz','#e6eeff','El corazón del León.'],
+['adhara','Adhara',6.9771,-28.972,1.5,'Can Mayor','430 años luz',null,''],
+['shaula','Shaula',17.5601,-37.104,1.62,'Escorpio','570 años luz',null,'El aguijón del Escorpión.'],
+['gacrux','Gacrux',12.5194,-57.113,1.63,'Cruz del Sur','88 años luz','#ffb98a','La cabeza de la Cruz del Sur: una gigante roja.'],
+['bellatrix','Bellatrix',5.4189,6.35,1.64,'Orión','250 años luz',null,''],
+['alnilam','Alnilam',5.6036,-1.202,1.69,'Orión','unos 2.000 años luz',null,'La del medio de las Tres Marías, el cinturón de Orión.'],
+['alnitak','Alnitak',5.6793,-1.943,1.77,'Orión','unos 1.200 años luz',null,'Una de las Tres Marías.'],
+['alioth','Alioth',12.9005,55.96,1.77,'Osa Mayor','83 años luz',null,''],
+['dubhe','Dubhe',11.0621,61.751,1.8,'Osa Mayor','123 años luz',null,''],
+['sargas','Sargas',17.622,-42.998,1.86,'Escorpio','300 años luz',null,''],
+['alkaid','Alkaid',13.7923,49.313,1.86,'Osa Mayor','104 años luz',null,''],
+['polaris','Polaris',2.5303,89.264,1.98,'Osa Menor','430 años luz','#fff6d8','La estrella polar del norte. Desde el hemisferio sur queda siempre bajo el horizonte: probá apuntar el celu hacia el suelo, mirando al norte.'],
+['saiph','Saiph',5.7959,-9.67,2.06,'Orión','650 años luz',null,''],
+['mintaka','Mintaka',5.5334,-0.299,2.23,'Orión','unos 1.200 años luz',null,'Una de las Tres Marías.'],
+['mizar','Mizar',13.3988,54.925,2.27,'Osa Mayor','83 años luz',null,''],
+['dsco','Dschubba',16.0056,-22.622,2.29,'Escorpio','440 años luz',null,''],
+['esco','Larawag',16.8361,-34.293,2.29,'Escorpio','64 años luz',null,''],
+['merak','Merak',11.0307,56.382,2.37,'Osa Mayor','79 años luz',null,''],
+['ksco','Girtab',17.7081,-39.03,2.4,'Escorpio','480 años luz',null,''],
+['phecda','Phecda',11.8972,53.695,2.44,'Osa Mayor','83 años luz',null,''],
+['bsco','Acrab',16.0906,-19.806,2.62,'Escorpio','400 años luz',null,''],
+['usco','Lesath',17.5127,-37.296,2.7,'Escorpio','580 años luz',null,''],
+['imai','Imai',12.2524,-58.749,2.79,'Cruz del Sur','345 años luz',null,'Uno de los brazos de la Cruz del Sur.'],
+['tsco','Paikauhale',16.598,-28.216,2.82,'Escorpio','470 años luz',null,''],
+['psco','Fang',15.9809,-26.114,2.89,'Escorpio','590 años luz',null,''],
+['ssco','Alniyat',16.3531,-25.593,2.9,'Escorpio','700 años luz',null,''],
+['msco','Xamidimura',16.8645,-38.048,3.0,'Escorpio','500 años luz',null,''],
+['isco','Iota Scorpii',17.793,-40.127,3.0,'Escorpio','1.800 años luz',null,''],
+['hsco','Eta Scorpii',17.2025,-43.239,3.3,'Escorpio','72 años luz',null,''],
+['megrez','Megrez',12.2571,57.033,3.31,'Osa Mayor','81 años luz',null,''],
+['ecru','Ginan',12.3561,-60.401,3.59,'Cruz del Sur','230 años luz',null,'La «intrusa» de la Cruz del Sur: la estrellita entre los brazos.'],
+['zsco','Zeta Scorpii',16.9097,-42.362,3.6,'Escorpio','130 años luz',null,'']
+];
+STARS.forEach(s=>add({id:s[0],name:s[1],kind:'estrella',ra:s[2],dec:s[3],mag:s[4],cons:s[5],dist:s[6],color:s[7]||'#eef4ff',text:s[8]||('Una estrella de la constelación '+s[5]+'.')}));
+const LINES=[['acrux','gacrux'],['mimosa','imai'],['betelgeuse','bellatrix'],['betelgeuse','alnitak'],['bellatrix','mintaka'],['mintaka','alnilam'],['alnilam','alnitak'],['alnitak','saiph'],['mintaka','rigel'],['rigel','saiph'],
+ ['bsco','dsco'],['dsco','psco'],['dsco','ssco'],['ssco','antares'],['antares','tsco'],['tsco','esco'],['esco','msco'],['msco','zsco'],['zsco','hsco'],['hsco','sargas'],['sargas','isco'],['isco','ksco'],['ksco','shaula'],['shaula','usco'],
+ ['acen','hadar'],['dubhe','merak'],['merak','phecda'],['phecda','megrez'],['megrez','dubhe'],['megrez','alioth'],['alioth','mizar'],['mizar','alkaid']];
+const CONS=[['Cruz del Sur',['acrux','gacrux','mimosa','imai']],['Orión',['alnilam','betelgeuse','rigel']],['Escorpio',['antares','esco','dsco']],['Osa Mayor',['megrez','phecda','alioth']],['Los punteros',['acen','hadar']]];
+const TYPE={sol:'Estrella · nuestro Sol',luna:'Satélite natural',planeta:'Planeta',estrella:'Estrella',agujero:'Agujero negro',galaxia:'Galaxia',nube:'Galaxia satélite',nebulosa:'Nebulosa',cumulo:'Cúmulo de estrellas',vialactea:'Nuestra galaxia'};
+/* Vía Láctea: plano galáctico */
+const MW=[];
+for(let l=0;l<360;l+=3){const L=l>180?l-360:l;
+ const g=(x,s)=>Math.exp(-(x/s)*(x/s));let br=0.32+0.68*g(L,38)+0.25*g(L-75,18)+0.3*g(L+73,14)+0.2*g(L+50,16);
+ MW.push({eq:null,l,br:Math.min(1,br),wd:7+9*g(L,28)});}
+
+/* ---------- Cálculo del cielo ---------- */
+function compute(){
+ const now=new Date(Date.now()+st.tOff*3600000);st.now=now;
+ const JD=now.getTime()/86400000+2440587.5,d=JD-2451545,T=d/36525;
+ const LST=((((280.46061837+360.98564736629*d+st.lon)%360)+360)%360)*DEG,lat=st.lat*DEG;
+ const earth=helio('tierra',T);let sunEq=null;
+ for(const o of OBJ){let eq;
+  if(o.kind==='planeta'){const h=helio(o.id,T),g=[h[0]-earth[0],h[1]-earth[1],h[2]-earth[2]];o.au=Math.hypot(g[0],g[1],g[2]);eq=precess(ecl2eq(norm(g)),T);
+   o.pa=Math.acos(clamp(dot(h,g)/(Math.hypot(h[0],h[1],h[2])*o.au),-1,1));o.eqNow=eq;}
+  else if(o.kind==='sol'){o.au=Math.hypot(earth[0],earth[1],earth[2]);eq=precess(ecl2eq(norm([-earth[0],-earth[1],-earth[2]])),T);sunEq=eq;}
+  else if(o.kind==='luna'){const m=moonEcl(d);o.km=m.dist;eq=ecl2eq(m.v);
+   const se=eq2ecl(sunEq),lm=Math.atan2(m.v[1],m.v[0]),ls=Math.atan2(se[1],se[0]);
+   o.elong=((((lm-ls)*RAD)%360)+360)%360;o.illum=(1-Math.cos(o.elong*DEG))/2;o.sunW=null;}
+  else if(o.kind==='vialactea'){continue;}
+  else{if(!o._eq||Math.abs(o._T-T)>0.01){o._eq=precess(rd2v(o.ra,o.dec),T);o._T=T;if(o.kind==='galaxia')o._eqN=precess(rd2v(o.ra,o.dec+1),T);}eq=o._eq;}
+  let w=enu(eq,LST,lat);
+  if(o.kind==='luna')w=norm([w[0]*o.km,w[1]*o.km,w[2]*o.km-6371]);
+  o.w=w;if(o._eqN)o.wN=enu(o._eqN,LST,lat);
+  o.alt=Math.asin(clamp(w[2],-1,1))*RAD;o.az=((Math.atan2(w[0],w[1])*RAD)+360)%360;
+ }
+ BYID.luna.sunW=BYID.sol.w;
+ const L=BYID.luna;L.pa=Math.PI-Math.acos(clamp(dot(L.w,BYID.sol.w),-1,1));
+ for(const id in POLES){const o=BYID[id];if(!o._pole||Math.abs(o._pT-T)>0.01){o._pole=precess(rd2v(POLES[id][0]/15,POLES[id][1]),T);o._pT=T;}o.poleW=enu(o._pole,LST,lat);}
+ const sa=BYID.saturno;sa.B=Math.asin(clamp(-dot(sa._pole,sa.eqNow),-1,1));
+ let best=null;
+ for(const p of MW){if(!p.eq||Math.abs(p._T-T)>0.01){p.eq=precess(gal2eq(p.l,0),T);p._T=T;}p.w=enu(p.eq,LST,lat);if(!best||p.w[2]>best.w[2])best=p;}
+ const v=BYID.vialactea;v.w=best.w;v.alt=Math.asin(clamp(best.w[2],-1,1))*RAD;v.az=((Math.atan2(best.w[0],best.w[1])*RAD)+360)%360;
+}
+function moonPhase(o){const e=o.elong;return e<10||e>350?'Luna nueva':e<80?'Luna creciente':e<100?'Cuarto creciente':e<170?'Gibosa creciente':e<190?'Luna llena':e<260?'Gibosa menguante':e<280?'Cuarto menguante':'Luna menguante';}
+const DIRS=['norte','noreste','este','sureste','sur','suroeste','oeste','noroeste'],DIRC=['N','NE','E','SE','S','SO','O','NO'];
+const dir8=(az,c)=>(c?DIRC:DIRS)[Math.round(az/45)%8];
+
+/* ---------- Lienzo y vista ---------- */
+const cv=$('#sky'),ctx=cv.getContext('2d'),video=$('#cam');
+let W=0,H=0,CX=0,CY=0,FOC=600,cT=1,sT=0,dpr=1;
+function resize(){dpr=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*dpr;cv.height=H*dpr;CX=W/2;CY=H/2;}
+addEventListener('resize',resize);resize();
+let B=[[1,0,0],[0,0,1],[0,-1,0]],TB=null;
+function oriMatrix(a,b,g){const cA=Math.cos(a),sA=Math.sin(a),cB=Math.cos(b),sB=Math.sin(b),cG=Math.cos(g),sG=Math.sin(g);
+ return [[cA*cG-sA*sB*sG,cG*sA+cA*sB*sG,-cB*sG],[-cB*sA,cA*cB,sB],[cG*sA*sB+cA*sG,sA*sG-cA*cG*sB,cB*cG]];}
+function onOri(e){
+ let a=e.alpha;
+ if(typeof e.webkitCompassHeading==='number'&&!isNaN(e.webkitCompassHeading)){a=360-e.webkitCompassHeading;st.absolute=true;}
+ else if(e.absolute||e.type==='deviceorientationabsolute')st.absolute=true;
+ if(a==null||e.beta==null)return;
+ st.sensor=true;
+ TB=oriMatrix((a+st.north)*DEG,e.beta*DEG,(e.gamma||0)*DEG);
+}
+function listenSensors(){
+ if('ondeviceorientationabsolute' in window)addEventListener('deviceorientationabsolute',onOri);
+ else addEventListener('deviceorientation',onOri);
+}
+function updateBasis(){
+ if(st.drag||!TB){const az=st.vAz*DEG,al=st.vAlt*DEG;const F=[Math.cos(al)*Math.sin(az),Math.cos(al)*Math.cos(az),Math.sin(al)],R=[Math.cos(az),-Math.sin(az),0];
+  B=[R,cross(R,F),[-F[0],-F[1],-F[2]]];cT=1;sT=0;return;}
+ const k=0.22;for(let i=1;i<3;i++)for(let j=0;j<3;j++)B[i][j]+=(TB[i][j]-B[i][j])*k;
+ const b2=norm(B[2]),d=dot(B[1],b2),b1=norm([B[1][0]-d*b2[0],B[1][1]-d*b2[1],B[1][2]-d*b2[2]]);
+ B=[cross(b1,b2),b1,b2];
+ const ang=((screen.orientation&&screen.orientation.angle)||window.orientation||0)*DEG;cT=Math.cos(ang);sT=Math.sin(ang);
+}
+function proj(w){const dx=dot(w,B[0]),dy=dot(w,B[1]),dz=dot(w,B[2]);const rx=dx*cT-dy*sT,ry=dx*sT+dy*cT;
+ if(dz>-0.02)return {ok:false,rx,ry,dz};const k=FOC/(-dz);return {ok:true,x:CX+rx*k,y:CY-ry*k,rx,ry,dz};}
+const onScr=(p,m=60)=>p.ok&&p.x>-m&&p.x<W+m&&p.y>-m&&p.y<H+m;
+function circle(x,y,r){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}
+function label(t,x,y,col,size,weight){ctx.font=(weight||600)+' '+(size||13)+'px system-ui,sans-serif';ctx.textAlign='center';ctx.lineWidth=3.5;ctx.strokeStyle='rgba(0,0,0,.75)';ctx.strokeText(t,x,y);ctx.fillStyle=col||'#fff';ctx.fillText(t,x,y);}
+
+/* ---------- Dibujo ---------- */
+let hits=[];
+function drawMW(){
+ for(let i=0;i<MW.length;i++){const a=MW[i],b=MW[(i+1)%MW.length];const pa=proj(a.w),pb=proj(b.w);
+  if(!pa.ok||!pb.ok||pa.dz>-0.12||pb.dz>-0.12)continue;
+  if(!onScr(pa,600)&&!onScr(pb,600))continue;
+  const below=(a.w[2]<0&&b.w[2]<0)?0.35:1,br=(a.br+b.br)/2,wd=(a.wd+b.wd)/2*DEG*FOC;
+  ctx.lineCap='round';
+  [[1,0.05],[0.55,0.08],[0.22,0.12]].forEach(([s,al])=>{ctx.strokeStyle='rgba(205,218,255,'+(al*br*below).toFixed(3)+')';ctx.lineWidth=Math.max(2,wd*s);ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pb.x,pb.y);ctx.stroke();});
+ }
+}
+function drawHorizon(){
+ ctx.strokeStyle='rgba(245,158,11,.7)';ctx.lineWidth=1.5;ctx.setLineDash([6,6]);
+ let prev=null;for(let az=0;az<=360;az+=4){const w=[Math.sin(az*DEG),Math.cos(az*DEG),0],p=proj(w);
+  if(prev&&prev.ok&&p.ok&&prev.dz<-0.1&&p.dz<-0.1){ctx.beginPath();ctx.moveTo(prev.x,prev.y);ctx.lineTo(p.x,p.y);ctx.stroke();}prev=p;}
+ ctx.setLineDash([]);
+ for(let i=0;i<8;i++){const az=i*45,w=[Math.sin(az*DEG)*0.999,Math.cos(az*DEG)*0.999,0.045],p=proj(w);
+  if(onScr(p,0))label(DIRC[i],p.x,p.y,i%2?'#ffd58a':'#F59E0B',i%2?13:18,800);}
+}
+function drawLines(){
+ if(!st.lines)return;ctx.lineWidth=1.2;
+ for(const [a,b] of LINES){const A=BYID[a],Bo=BYID[b];const pa=proj(A.w),pb=proj(Bo.w);
+  if(!pa.ok||!pb.ok||(!onScr(pa,300)&&!onScr(pb,300)))continue;
+  ctx.strokeStyle='rgba(56,189,248,'+((A.alt<0&&Bo.alt<0)?0.15:0.42)+')';ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pb.x,pb.y);ctx.stroke();}
+ for(const [n,ids] of CONS){let s=[0,0,0];ids.forEach(i=>{const w=BYID[i].w;s[0]+=w[0];s[1]+=w[1];s[2]+=w[2];});const p=proj(norm(s));
+  if(onScr(p,0))label(n.toUpperCase(),p.x,p.y+26,'rgba(125,211,252,.75)',11,700);}
+}
+function drawStar(o,p){const below=o.alt<0;const r=Math.max(1.2,3.8-o.mag*0.8);
+ ctx.globalAlpha=below?0.35:1;ctx.fillStyle='rgba(170,205,255,.16)';circle(p.x,p.y,r*2.8);ctx.fillStyle=o.color;circle(p.x,p.y,r);ctx.globalAlpha=1;
+ if(st.names&&(o.mag<1.4||FOC>900||o===st.sel||o===st.target))label(o.name,p.x,p.y-r-7,below?'rgba(220,230,255,.45)':'#dfeaff',12,500);}
+/* ---------- Esferas 3D (texturas procedurales + luz real del Sol) ---------- */
+const POLES={mercurio:[281.01,61.42],venus:[272.76,67.16],marte:[317.68,52.89],jupiter:[268.06,64.50],saturno:[40.59,83.54],urano:[257.31,-15.18],neptuno:[299.36,43.46],sol:[286.13,63.87],luna:[270,66.56]};
+const SPIN={mercurio:.05,venus:.02,marte:.14,jupiter:.3,saturno:.26,urano:.12,neptuno:.14,sol:.03,luna:0};
+function hash3(x,y,z){const h=Math.sin(x*127.1+y*311.7+z*74.7)*43758.5453;return h-Math.floor(h);}
+function vnoise(x,y,z){const xi=Math.floor(x),yi=Math.floor(y),zi=Math.floor(z),xf=x-xi,yf=y-yi,zf=z-zi;
+ const u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf),w=zf*zf*(3-2*zf),c=(i,j,k)=>hash3(xi+i,yi+j,zi+k),L=(a,b,t)=>a+(b-a)*t;
+ return L(L(L(c(0,0,0),c(1,0,0),u),L(c(0,1,0),c(1,1,0),u),v),L(L(c(0,0,1),c(1,0,1),u),L(c(0,1,1),c(1,1,1),u),v),w);}
+function fbm(x,y,z,o){let s=0,a=.5,f=1;for(let i=0;i<(o||4);i++){s+=a*vnoise(x*f+i*17,y*f,z*f);f*=2.03;a*=.5;}return s/(1-Math.pow(.5,o||4));}
+const mix=(a,b,t)=>{t=clamp(t,0,1);return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];};
+const sstep=(e0,e1,x)=>{const t=clamp((x-e0)/(e1-e0),0,1);return t*t*(3-2*t);};
+const spot=(lon,lat,lo0,la0,rl,rb)=>{let dl=Math.atan2(Math.sin(lon-lo0),Math.cos(lon-lo0))*Math.cos(lat);const q=(dl/rl)**2+((lat-la0)/rb)**2;return Math.max(0,1-q);};
+const TEXGEN={
+ mercurio:(x,y,z,lon,lat)=>{const n=fbm(x*4,y*4,z*4,5),c=fbm(x*13,y*13,z*13,3);let k=mix([85,80,76],[185,176,165],n);if(c>.66)k=mix(k,[60,57,54],(c-.66)*5);else if(c>.6)k=mix(k,[215,208,198],(c-.6)*8);return k;},
+ venus:(x,y,z,lon,lat)=>{const w=fbm(x*2,y*2,z*2,3);const n=fbm(x*2+w*2,y*8,z*2+w*2,4);return mix([205,165,100],[252,238,200],n);},
+ marte:(x,y,z,lon,lat)=>{const n=fbm(x*3,y*3,z*3,5),m=fbm(x*2+5,y*2,z*2,4);let k=mix([115,42,22],[222,118,66],n);k=mix(k,[80,40,30],sstep(.52,.66,m)*.8);
+  const cap=Math.abs(lat)*RAD+8*(fbm(x*6,y*6,z*6,3)-.5);return mix(k,[244,242,240],sstep(70,76,cap));},
+ jupiter:(x,y,z,lon,lat)=>{const t=lat+.06*(fbm(x*5,y*9,z*5,4)-.5);const b=.5+.5*Math.sin(t*15+1.3);let k=mix([176,120,80],[246,232,206],b);
+  k=mix(k,[205,170,130],.35*fbm(x*12,y*30,z*12,3));k=mix(k,[150,110,95],sstep(1.15,1.4,Math.abs(lat)));
+  return mix(k,[205,92,58],sstep(0,.6,spot(lon,lat,0.5,-22*DEG,.22,.1)));},
+ saturno:(x,y,z,lon,lat)=>{const t=lat+.02*(fbm(x*4,y*10,z*4,3)-.5);const b=.5+.5*Math.sin(t*20);let k=mix([196,160,104],[244,224,176],b);return mix(k,[170,150,120],sstep(1.1,1.45,Math.abs(lat)));},
+ urano:(x,y,z,lon,lat)=>mix([140,205,212],[190,238,238],.5+.35*Math.sin(lat*7)+.15*fbm(x*3,y*6,z*3,3)),
+ neptuno:(x,y,z,lon,lat)=>{let k=mix([38,70,180],[95,145,240],.5+.35*Math.sin(lat*9+fbm(x*3,y*6,z*3,3)*2));k=mix(k,[20,30,90],sstep(0,.5,spot(lon,lat,1.2,-20*DEG,.2,.09)));return mix(k,[230,240,255],sstep(.3,.7,spot(lon,lat,1.7,-28*DEG,.12,.03)));},
+ luna:(x,y,z,lon,lat)=>{const n=fbm(x*3,y*3,z*3,5),m=fbm(x*1.6+3,y*1.6+1,z*1.6+2,4),c=fbm(x*16,y*16,z*16,3);let k=mix([170,168,162],[214,212,206],n);
+  k=mix(k,[92,92,98],sstep(.5,.6,m));if(c>.68)k=mix(k,[240,238,232],(c-.68)*6);return k;},
+ sol:(x,y,z,lon,lat)=>{const n=fbm(x*18,y*18,z*18,3);return [255,190+50*n,80+90*n];}
+};
+const TW=256,TH=128,TEX={};
+function getTex(id){if(TEX[id])return TEX[id];const t=new Uint8ClampedArray(TW*TH*3),f=TEXGEN[id];
+ for(let j=0;j<TH;j++){const lat=(0.5-(j+.5)/TH)*Math.PI,cl=Math.cos(lat),sl=Math.sin(lat);
+  for(let i=0;i<TW;i++){const lon=(i+.5)/TW*2*Math.PI,x=cl*Math.cos(lon),y=sl,z=cl*Math.sin(lon),k=f(x,y,z,lon,lat),o=(j*TW+i)*3;t[o]=k[0];t[o+1]=k[1];t[o+2]=k[2];}}
+ return TEX[id]=t;}
+const SPR={};
+/* dibuja la esfera: rot = giro del sprite en pantalla (para alinear el polo), phi = dirección al Sol en pantalla, pa = ángulo de fase */
+function drawSphere(id,x,y,r,rot,phi,pa,emis){
+ const S=clamp(Math.round(r*2*dpr),16,220);let c=SPR[id];
+ if(!c){c=SPR[id]={cv:document.createElement('canvas'),last:-1};}
+ const now=perfT;
+ if(c.S!==S||now-c.last>0.09||Math.abs(c.phi-(phi-rot))>0.05||Math.abs((c.pa||0)-pa)>0.02){
+  c.cv.width=S;c.cv.height=S;const g=c.cv.getContext('2d'),img=g.createImageData(S,S),D=img.data,tex=getTex(id),R=S/2;
+  const lp=phi-rot,Lx=Math.cos(lp)*Math.sin(pa),Ly=Math.sin(lp)*Math.sin(pa),Lz=Math.cos(pa),spin=now*(SPIN[id]||0);
+  const atm=id==='venus'||id==='urano'||id==='neptuno'||id==='jupiter'||id==='saturno';
+  for(let py=0;py<S;py++){const yy=(py+.5-R)/R;for(let px=0;px<S;px++){const xx=(px+.5-R)/R,rr=xx*xx+yy*yy;if(rr>1)continue;
+   const zz=Math.sqrt(1-rr),lat=Math.asin(-yy),lon=Math.atan2(xx,zz)+spin;
+   const u=((Math.floor((lon/(2*Math.PI))*TW)%TW)+TW)%TW,v=clamp(Math.floor((0.5-lat/Math.PI)*TH),0,TH-1),ti=(v*TW+u)*3;
+   let sh;if(emis)sh=0.5+0.5*Math.pow(zz,0.6);
+   else{const dif=xx*Lx+yy*Ly+zz*Lz;sh=0.035+0.965*sstep(-0.08,0.35,dif)*(0.75+0.25*Math.max(0,dif));if(id!=='luna')sh*=0.68+0.32*Math.sqrt(zz);if(atm)sh*=0.85+0.15*zz;
+    if(id==='venus'){const lit=xx*Math.cos(lp)+yy*Math.sin(lp);sh=Math.max(sh,0.9*Math.pow(1-zz,3)*sstep(-0.6,0.8,lit)*sstep(0,0.8,-Lz));}}
+   const o=(py*S+px)*4,edge=clamp((1-Math.sqrt(rr))*R*1.6,0,1);
+   D[o]=tex[ti]*sh;D[o+1]=tex[ti+1]*sh;D[o+2]=tex[ti+2]*sh;D[o+3]=255*edge;}}
+  g.putImageData(img,0,0);c.S=S;c.last=now;c.phi=phi-rot;c.pa=pa;}
+ ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.drawImage(c.cv,-r,-r,r*2,r*2);ctx.restore();}
+function screenAngleToward(o,p,W2){if(!W2)return null;const s=o.w,d=dot(W2,s),t=norm([W2[0]-d*s[0],W2[1]-d*s[1],W2[2]-d*s[2]]),q=proj(norm([s[0]+0.02*t[0],s[1]+0.02*t[1],s[2]+0.02*t[2]]));return q.ok?Math.atan2(q.y-p.y,q.x-p.x):null;}
+function ringHalf(p,r,ang,B,front){const ux=-Math.sin(ang),uy=Math.cos(ang),vx=Math.cos(ang),vy=Math.sin(ang),k=Math.max(Math.abs(Math.sin(B)),0.09);
+ const fs=B>0?-1:1,t0=(front?fs>0:fs<0)?0:Math.PI;
+ [[1.24,1.52,'rgba(150,132,98,.5)'],[1.53,1.93,'rgba(232,214,168,.92)'],[1.99,2.28,'rgba(200,184,142,.75)']].forEach(([a,b,col])=>{
+  ctx.beginPath();for(let i=0;i<=24;i++){const t=t0+i/24*Math.PI;ctx.lineTo(p.x+a*r*Math.cos(t)*ux+a*r*k*Math.sin(t)*vx,p.y+a*r*Math.cos(t)*uy+a*r*k*Math.sin(t)*vy);}
+  for(let i=24;i>=0;i--){const t=t0+i/24*Math.PI;ctx.lineTo(p.x+b*r*Math.cos(t)*ux+b*r*k*Math.sin(t)*vx,p.y+b*r*Math.cos(t)*uy+b*r*k*Math.sin(t)*vy);}
+  ctx.closePath();ctx.fillStyle=col;ctx.fill();});}
+function glow(x,y,r1,r2,col,a){const g=ctx.createRadialGradient(x,y,r1,x,y,r2);g.addColorStop(0,'rgba('+col+','+a+')');g.addColorStop(1,'rgba('+col+',0)');ctx.fillStyle=g;circle(x,y,r2);}
+function hex2rgb(h){const n=parseInt(h.slice(1),16);return ((n>>16)&255)+','+((n>>8)&255)+','+(n&255);}
+function drawPlanet(o,p){const below=o.alt<0,zoom=clamp(62/st.fov,1,3.4),r=o.r*1.9*zoom;ctx.globalAlpha=below?0.45:1;
+ glow(p.x,p.y,r*0.8,r*(o.id==='saturno'?3:2.3),hex2rgb(o.color),.28);
+ const pole=screenAngleToward(o,p,o.poleW),rot=pole==null?0:pole+Math.PI/2,sun=screenAngleToward(o,p,BYID.sol.w);
+ if(o.id==='saturno'&&pole!=null)ringHalf(p,r,pole,o.B||0.1,false);
+ drawSphere(o.id,p.x,p.y,r,rot,sun==null?0:sun,o.pa||0,false);
+ if(o.id==='saturno'&&pole!=null)ringHalf(p,r,pole,o.B||0.1,true);
+ ctx.globalAlpha=1;label(o.name+(below?' ⤓':''),p.x,p.y-r*(o.id==='saturno'?1.4:1)-10,below?'rgba(255,230,180,.6)':'#ffe7b0',14,700);}
+function drawSun(o,p){const below=o.alt<0,r=Math.max(22,FOC*0.27*DEG);ctx.globalAlpha=below?0.4:1;
+ glow(p.x,p.y,r*0.6,r*4.5,'255,190,60',.55);glow(p.x,p.y,r,r*2,'255,240,190',.5);
+ const pole=screenAngleToward(o,p,o.poleW);drawSphere('sol',p.x,p.y,r,pole==null?0:pole+Math.PI/2,0,0,true);
+ ctx.globalAlpha=1;label('Sol'+(below?' ⤓':''),p.x,p.y-r-12,'#ffe7b0',15,800);}
+function drawMoon(o,p){const below=o.alt<0,r=Math.max(24,FOC*0.26*DEG);ctx.globalAlpha=below?0.5:1;
+ glow(p.x,p.y,r*0.9,r*2.2,'230,235,255',.12*(0.3+o.illum));
+ const pole=screenAngleToward(o,p,o.poleW),rot=pole==null?0:pole+Math.PI/2,sun=screenAngleToward(o,p,o.sunW);
+ ctx.fillStyle='rgba(20,24,34,.85)';circle(p.x,p.y,r*0.98);
+ drawSphere('luna',p.x,p.y,r,rot,sun==null?0:sun,o.pa||0,false);
+ ctx.globalAlpha=1;label('Luna'+(below?' ⤓':''),p.x,p.y-r-10,'#f3f0e2',15,800);}
+function drawBH(o,p,t){const below=o.alt<0,r=below?9:12;ctx.save();ctx.translate(p.x,p.y);ctx.globalAlpha=below?0.45:1;
+ const g=ctx.createRadialGradient(0,0,r*0.6,0,0,r*3);g.addColorStop(0,'rgba(255,170,60,.95)');g.addColorStop(0.35,'rgba(255,90,20,.45)');g.addColorStop(1,'rgba(124,58,237,0)');ctx.fillStyle=g;circle(0,0,r*3);
+ ctx.rotate(t*0.7);ctx.strokeStyle='rgba(255,214,130,.95)';ctx.lineWidth=2.4;ctx.beginPath();ctx.ellipse(0,0,r*2.2,r*0.65,0,0,Math.PI*2);ctx.stroke();ctx.rotate(-t*0.7);
+ ctx.fillStyle='#000';circle(0,0,r);ctx.strokeStyle='rgba(255,236,190,.95)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,0,r*1.08,0,Math.PI*2);ctx.stroke();
+ ctx.restore();label('🕳️ '+o.name+(below?' ⤓':''),p.x,p.y-r*2.2-6,below?'rgba(255,200,120,.6)':'#ffc46b',13,800);}
+function drawDeep(o,p){const below=o.alt<0,sz=Math.max(o.kind==='nube'?22:12,FOC*o.size*DEG/2);ctx.save();ctx.globalAlpha=below?0.4:1;ctx.translate(p.x,p.y);
+ if(o.kind==='galaxia'){let ang=0;if(o.wN){const q=proj(o.wN);if(q.ok)ang=Math.atan2(q.y-p.y,q.x-p.x)-35*DEG;}ctx.rotate(ang);ctx.scale(1,0.32);}
+ const col=o.kind==='nebulosa'?'255,120,190':o.kind==='cumulo'?'190,215,255':'215,225,255';
+ const g=ctx.createRadialGradient(0,0,0,0,0,sz);g.addColorStop(0,'rgba('+col+',.85)');g.addColorStop(0.3,'rgba('+col+',.35)');g.addColorStop(1,'rgba('+col+',0)');ctx.fillStyle=g;circle(0,0,sz);
+ if(o.kind==='cumulo'){ctx.fillStyle='#fff';for(let i=0;i<7;i++){const a=i*2.4,rr=sz*0.35*((i*37)%10)/10;circle(Math.cos(a)*rr,Math.sin(a)*rr,1.3);}}
+ ctx.restore();label(o.name+(below?' ⤓':''),p.x,p.y-Math.min(sz,40)*(o.kind==='galaxia'?0.5:0.7)-8,below?'rgba(220,210,255,.55)':'#d9ccff',13,700);}
+function drawArrowTo(o){const p=proj(o.w);let ang;
+ if(p.ok&&onScr(p,-30)){const r=26+6*Math.sin(perfT*6);ctx.strokeStyle='#F59E0B';ctx.lineWidth=3;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.stroke();return;}
+ ang=Math.atan2(-p.ry,p.rx);if(Math.hypot(p.rx,p.ry)<0.02)ang=Math.PI/2;
+ const R=Math.min(W,H)*0.36,x=CX+Math.cos(ang)*R,y=CY+Math.sin(ang)*R;
+ ctx.save();ctx.translate(x,y);ctx.rotate(ang);ctx.fillStyle='#F59E0B';ctx.beginPath();ctx.moveTo(26,0);ctx.lineTo(-12,-17);ctx.lineTo(-4,0);ctx.lineTo(-12,17);ctx.closePath();ctx.fill();ctx.restore();
+ label(o.name,x,y+(Math.sin(ang)>0?-26:36),'#ffd58a',14,800);}
+let perfT=0,lastC=0,lastF=0,foundLock=0;
+function frame(ts){
+ requestAnimationFrame(frame);perfT=ts/1000;const dt=Math.min(0.1,(ts-lastF)/1000||0);lastF=ts;
+ if(st.anim){st.tOff+=dt*0.5;updTimeInfo();}
+ if(ts-lastC>1000||st.anim){compute();lastC=ts;}
+ updateBasis();FOC=(H/2)/Math.tan(st.fov*DEG/2);
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+ if(st.cam&&stream){ctx.clearRect(0,0,W,H);ctx.fillStyle='rgba(2,6,25,.28)';ctx.fillRect(0,0,W,H);}
+ else{const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#020611');g.addColorStop(1,'#0E2A47');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
+ hits=[];
+ if(st.mw)drawMW();
+ drawHorizon();drawLines();
+ const order=['estrella','cumulo','nebulosa','nube','galaxia','agujero','planeta','luna','sol'];
+ for(const k of order)for(const o of OBJ){if(o.kind!==k)continue;const p=proj(o.w);if(!onScr(p))continue;
+  if(k==='estrella')drawStar(o,p);else if(k==='planeta')drawPlanet(o,p);else if(k==='sol')drawSun(o,p);else if(k==='luna')drawMoon(o,p);else if(k==='agujero')drawBH(o,p,perfT);else drawDeep(o,p);
+  hits.push({o,x:p.x,y:p.y});}
+ if(st.mw){const v=BYID.vialactea,p=proj(v.w);if(onScr(p,0)){label('VÍA LÁCTEA',p.x,p.y+4,'rgba(230,236,255,.8)',12,800);hits.push({o:v,x:p.x,y:p.y});}}
+ // mira
+ ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(CX,CY,22,0,Math.PI*2);ctx.moveTo(CX-34,CY);ctx.lineTo(CX-26,CY);ctx.moveTo(CX+26,CY);ctx.lineTo(CX+34,CY);ctx.moveTo(CX,CY-34);ctx.lineTo(CX,CY-26);ctx.moveTo(CX,CY+26);ctx.lineTo(CX,CY+34);ctx.stroke();
+ const c=nearest(CX,CY,34);if(c)label('Tocá para ver: '+c.o.name,CX,CY+56,'#38BDF8',14,700);
+ if(st.target){drawArrowTo(st.target);
+  const F=[-B[2][0],-B[2][1],-B[2][2]],sep=Math.acos(clamp(dot(F,st.target.w),-1,1))*RAD;
+  if(sep<6&&ts>foundLock){const o=st.target;st.target=null;foundLock=ts+1500;try{navigator.vibrate&&navigator.vibrate([80,60,120]);}catch(e){}toast('🎯 ¡Encontraste '+o.name+'!');openCard(o);}}
+ // HUD
+ const F=[-B[2][0],-B[2][1],-B[2][2]],vaz=((Math.atan2(F[0],F[1])*RAD)+360)%360,valt=Math.asin(clamp(F[2],-1,1))*RAD;st.viewAz=vaz;
+ hudLook.textContent='Mirás al '+dir8(vaz)+' · '+Math.round(valt)+'° de altura'+(st.sensor&&!st.absolute&&!st.drag?' ⚠️':'');
+}
+const hudLook=$('#look'),hudClock=$('#clock');
+setInterval(()=>{hudClock.textContent=st.now.toLocaleString('es-AR',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+(Math.abs(st.tOff)>0.01?' ⏱':'');},500);
+function nearest(x,y,max){let b=null,bd=max;for(const h of hits){const d=Math.hypot(h.x-x,h.y-y);if(d<bd){bd=d;b=h;}}return b;}
+
+/* ---------- Interacción ---------- */
+const pts=new Map();let drag0=null,pinch0=null;
+cv.addEventListener('pointerdown',e=>{try{cv.setPointerCapture(e.pointerId);}catch(_){}pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(pts.size===1)drag0={x:e.clientX,y:e.clientY,moved:false,az:st.vAz,alt:st.vAlt};
+ if(pts.size===2){const [a,b]=[...pts.values()];pinch0={d:Math.hypot(a.x-b.x,a.y-b.y),fov:st.fov};if(drag0)drag0.moved=true;}});
+cv.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(pinch0&&pts.size>=2){const [a,b]=[...pts.values()];st.fov=clamp(pinch0.fov*pinch0.d/Math.max(10,Math.hypot(a.x-b.x,a.y-b.y)),20,110);syncFov();return;}
+ if(drag0){const dx=e.clientX-drag0.x,dy=e.clientY-drag0.y;if(Math.hypot(dx,dy)>8)drag0.moved=true;
+  if(drag0.moved&&(st.drag||!st.sensor)){st.vAz=((drag0.az-dx/FOC*RAD)%360+360)%360;st.vAlt=clamp(drag0.alt+dy/FOC*RAD,-89,89);}}});
+function up(e){if(drag0&&!drag0.moved&&pts.size===1){const h=nearest(e.clientX,e.clientY,46);if(h)openCard(h.o);else hide('#card');}
+ pts.delete(e.pointerId);if(pts.size<2)pinch0=null;if(pts.size===0)drag0=null;save();}
+cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+cv.addEventListener('wheel',e=>{e.preventDefault();st.fov=clamp(st.fov*(1+e.deltaY*0.001),20,110);syncFov();},{passive:false});
+
+function show(s){document.querySelectorAll('.sheet').forEach(x=>x.classList.remove('show'));$(s).classList.add('show');}
+function hide(s){$(s).classList.remove('show');}
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.sheet').classList.remove('show'));
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',3600);}
+
+function posText(o){if(o.alt>=0)return '↑ '+Math.round(o.alt)+'° sobre el horizonte, hacia el '+dir8(o.az)+'.';
+ return '⤓ Ahora está '+Math.round(-o.alt)+'° bajo el horizonte, hacia el '+dir8(o.az)+': lo tapa la Tierra. Apuntá al suelo y lo ves «a través» del planeta.';}
+function fmtKm(km){return km>=1e6?(km/1e6).toLocaleString('es-AR',{maximumFractionDigits:km>1e8?0:1})+' millones de km':Math.round(km).toLocaleString('es-AR')+' km';}
+function fmtLight(min){if(min<1)return Math.round(min*60)+' segundos';if(min<60)return Math.round(min)+' minutos';const h=Math.floor(min/60),m=Math.round(min%60);return h+' h '+m+' min';}
+function distText(o){
+ if(o.au)return 'Está a '+fmtKm(o.au*149597870.7)+'. Su luz tarda '+fmtLight(o.au*8.3167)+' en llegar a tus ojos.';
+ if(o.kind==='luna')return 'Está a '+fmtKm(o.km)+'. Su luz tarda '+fmtLight(o.km/299792/60)+' en llegar.';
+ if(o.kind==='vialactea')return o.dist+'.';
+ return 'Distancia: '+o.dist+(o.dist.includes('año')?' (la luz que ves salió hace ese tiempo).':'.');}
+function cardText(o){return o.kind==='luna'?moonPhase(o)+', iluminada al '+Math.round(o.illum*100)+'%. '+o.text:o.text;}
+function openCard(o){st.sel=o;$('#cTitle').textContent=o.name;const tg=$('#cTag');tg.textContent=TYPE[o.kind]+(o.cons?' · '+o.cons:'');tg.className='tag'+(o.kind==='agujero'?' bh':'');
+ $('#cPos').textContent=posText(o);$('#cDist').textContent=distText(o);$('#cText').textContent=cardText(o);
+ $('#bCal').style.display=(st.sensor&&!st.drag)?'':'none';show('#card');}
+$('#bSay').onclick=()=>{const o=st.sel;if(!o||!window.speechSynthesis)return toast('Tu navegador no tiene voz');speechSynthesis.cancel();
+ const u=new SpeechSynthesisUtterance(o.name+'. '+cardText(o)+' '+distText(o));u.lang='es-AR';u.rate=1;const v=speechSynthesis.getVoices().find(v=>/^es/i.test(v.lang));if(v)u.voice=v;speechSynthesis.speak(u);};
+$('#bGuide').onclick=()=>{if(!st.sel)return;st.target=st.sel;hide('#card');toast('Seguí la flecha hasta tener '+st.sel.name+' en la mira');};
+$('#bCal').onclick=()=>{const o=st.sel;if(!o||st.viewAz==null)return;let d=((st.viewAz-o.az+540)%360)-180;st.north=((st.north+d+540)%360)-180;syncNorth();save();hide('#card');toast('🧭 Brújula calibrada con '+o.name);};
+
+function buildList(){compute();const groups=[['Planetas, Sol y Luna',o=>['planeta','sol','luna'].includes(o.kind)],['Agujeros negros',o=>o.kind==='agujero'],['Galaxias, nebulosas y cúmulos',o=>['galaxia','nube','nebulosa','cumulo','vialactea'].includes(o.kind)],['Estrellas brillantes',o=>o.kind==='estrella'&&(o.mag<1.4||o.id==='polaris')]];
+ const L=$('#list');L.innerHTML='';groups.forEach(([g,f])=>{const h=document.createElement('div');h.className='grp';h.textContent=g;L.appendChild(h);
+  OBJ.filter(f).sort((a,b)=>b.alt-a.alt).forEach(o=>{const b=document.createElement('button');b.className='item';const up=o.alt>=0;
+   b.innerHTML='<span></span><small class="'+(up?'up':'')+'"></small>';b.firstChild.textContent=(o.kind==='agujero'?'🕳️ ':'')+o.name;b.lastChild.textContent=up?'↑ '+Math.round(o.alt)+'° '+dir8(o.az,1):'bajo el horizonte';
+   b.onclick=()=>{st.target=o;hide('#pSearch');toast('Seguí la flecha hasta tener '+o.name+' en la mira');};L.appendChild(b);});});}
+$('#bSearch').onclick=()=>{buildList();show('#pSearch');};
+$('#bTime').onclick=()=>{updTimeInfo();show('#pTime');};
+$('#bSet').onclick=()=>{$('#iLat').value=st.lat;$('#iLon').value=st.lon;$('#locSrc').textContent=st.locSrc;show('#pSet');};
+document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{const v=+b.dataset.t;st.tOff=v===0?0:st.tOff+v;if(v===0){st.anim=false;$('#bAnim').textContent='▶ Animar el cielo';}compute();updTimeInfo();});
+$('#bAnim').onclick=()=>{st.anim=!st.anim;$('#bAnim').textContent=st.anim?'⏸ Pausar':'▶ Animar el cielo';};
+function updTimeInfo(){const h=st.tOff;$('#tInfo').textContent=Math.abs(h)<0.01?'Hora real':(h>0?'+':'−')+Math.abs(h).toFixed(1).replace('.',',')+' h';}
+$('#bLoc').onclick=()=>{const la=parseFloat($('#iLat').value),lo=parseFloat($('#iLon').value);if(isNaN(la)||isNaN(lo)||Math.abs(la)>90||Math.abs(lo)>180)return toast('Revisá los números');st.lat=la;st.lon=lo;st.locSrc='Manual';$('#locSrc').textContent=st.locSrc;save();compute();toast('Ubicación guardada');};
+$('#bGps').onclick=()=>locate(true);
+function locate(loud){if(!navigator.geolocation){if(loud)toast('Este navegador no tiene GPS');return;}
+ navigator.geolocation.getCurrentPosition(p=>{st.lat=+p.coords.latitude.toFixed(4);st.lon=+p.coords.longitude.toFixed(4);st.locSrc='GPS';save();compute();$('#iLat').value=st.lat;$('#iLon').value=st.lon;$('#locSrc').textContent='GPS';if(loud)toast('📍 Ubicación por GPS lista');},
+  ()=>{if(loud)toast('No pude usar el GPS. Uso: '+st.locSrc);},{enableHighAccuracy:false,timeout:12000,maximumAge:600000});}
+function syncNorth(){$('#iNorth').value=Math.round(st.north);$('#vNorth').textContent=Math.round(st.north)+'°';}
+function syncFov(){$('#iFov').value=Math.round(st.fov);$('#vFov').textContent=Math.round(st.fov)+'°';}
+$('#iNorth').oninput=e=>{st.north=+e.target.value;syncNorth();save();};
+$('#bNorth0').onclick=()=>{st.north=0;syncNorth();save();};
+$('#iFov').oninput=e=>{st.fov=+e.target.value;syncFov();save();};
+[['#cMw','mw'],['#cLines','lines'],['#cNames','names']].forEach(([s,k])=>{$(s).checked=st[k];$(s).onchange=e=>{st[k]=e.target.checked;save();};});
+$('#cDrag').onchange=e=>setDrag(e.target.checked);
+function setDrag(v){st.drag=v;$('#cDrag').checked=v;if(v){const F=[-B[2][0],-B[2][1],-B[2][2]];st.vAz=((Math.atan2(F[0],F[1])*RAD)+360)%360;st.vAlt=Math.asin(clamp(F[2],-1,1))*RAD;}}
+syncNorth();syncFov();
+
+let stream=null;
+async function startCam(){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Sin cámara: dibujo el cielo de noche');return false;}
+ try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});video.srcObject=stream;await video.play().catch(()=>{});video.style.display='block';return true;}
+ catch(e){stream=null;toast('No pude abrir la cámara ('+e.name+'). Sigo sin cámara.');st.cam=false;$('#bCam').classList.remove('on');return false;}}
+function stopCam(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}video.style.display='none';}
+$('#bCam').onclick=async()=>{st.cam=!st.cam;$('#bCam').classList.toggle('on',st.cam);if(st.cam)await startCam();else stopCam();};
+
+$('#go').onclick=async()=>{
+ try{if(window.DeviceOrientationEvent&&typeof DeviceOrientationEvent.requestPermission==='function'){const r=await DeviceOrientationEvent.requestPermission();if(r!=='granted')toast('Sin permiso de sensores: mové el cielo con el dedo');}}catch(e){}
+ listenSensors();
+ $('#intro').style.display='none';
+ locate(false);
+ if(st.cam)await startCam();
+ setTimeout(()=>{if(!st.sensor){setDrag(true);toast('No detecto sensores de movimiento: mové el cielo con el dedo ✋');}
+  else if(!st.absolute)toast('Tu brújula es aproximada: calibrala tocando la Luna o el Sol');},2500);
+};
+compute();requestAnimationFrame(frame);
+</script>
+</body>
+</html>
